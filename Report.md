@@ -42,6 +42,8 @@ The base function for `ddpg` was copied from `ddpg-bipedal` to get the main loop
 
 ## Hyper Parameters  
 
+### Agent
+
 BUFFER_SIZE = int(1e6)  # replay buffer size
 BATCH_SIZE = 128        # minibatch size
 GAMMA = 0.99            # discount factor
@@ -50,8 +52,21 @@ LR_ACTOR = 1e-4         # learning rate of the actor
 LR_CRITIC = 3e-4        # learning rate of the critic
 WEIGHT_DECAY = 0.0001   # L2 weight decay
 
-First I started with the same parameters like as the bipedal environment. After two episodes I had horrible results (around 0,5 points) so I changed the setup the following way. At first the learning rate seemed very slow - if I
+### OU Noise
 
+MU = 0.         # mean reversion level
+THETA = 0.15    # mean reversion speed oder mean reversion rate
+SIGMA = 0.2     # random factor influence
+source: https://de.wikipedia.org/wiki/Ornstein-Uhlenbeck-Prozess
+
+### Model
+
+* `Actor` contains 2 fully connected layers (256, 128) with leaky relu activations.
+* `Critic` contains 2 fully connected layers (256, 128) with leaky relu activations.
+
+### How I did it
+
+First I started with the same parameters like as the bipedal environment. After two episodes I had horrible results (around 0,5 points) so I changed the setup the following way. At first the learning rate seemed very slow and the scores where fluctuating, so I checked the NN model and extended a layer on the actor model. The improvment of score values seemed more stable after this, but still quite slow.
 
 ## Performance plot
 
