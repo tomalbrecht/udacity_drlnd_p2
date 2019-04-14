@@ -66,7 +66,7 @@ source: https://de.wikipedia.org/wiki/Ornstein-Uhlenbeck-Prozess
 
 ### How I did it
 
-First I started with the same parameters like as the bipedal environment. After two episodes I had horrible results (around 0,5 points) so I changed the setup the following way. At first the learning rate seemed very slow and the scores where fluctuating, so I checked the NN model and extended a layer on the actor model. The improvment of score values seemed more stable after this, but still quite slow.
+First I started with the same parameters like as the bipedal environment. After two episodes I had horrible results (around 0,5 points) so I changed the setup the following way. At first the learning rate seemed very slow and the scores where fluctuating, so I checked the NN model and extended a layer on the actor model. The improvment of score values seemed more stable after this, but still quite slow. Every update at episode end seems to reduce the score value. Increasing the timesteps reduced this problem.
 
 ## Performance plot
 
