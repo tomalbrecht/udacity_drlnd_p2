@@ -36,6 +36,7 @@ The program is structured in the following way:
 ### Basic setup of the environment
 
 The base function for `ddpg` was copied from `ddpg-bipedal` to get the main loops running. I changed the environment setup according to my first project. Then I extended the code to work with more than one Agent - depending on the number of agents the environment provides. When I ran the code, too less information about the training was provided, so I extended the code to print some information about scores per timestep.
+After a few trainings I decided to extend the initialization of the Agent, to parametrize the needed hyperparameters.
 
 ### Enhancements to the code
 
@@ -71,6 +72,11 @@ First I started with the same parameters like as the bipedal environment. After 
 Then I raised the update rate, in hope that the learning will speed up. This was the case, but the updates for each episode threw the scores back again. So I disabled the TAU (setting TAU = 1) to see if this will stop the throwbacks.
 
 It partially stopped the throwbacks, but after a few steps the scores broke down again. So it seems, that a mixture of frequent updates to the target network could help. Thus I implemented this function.
+
+The performance with 20 agent was terrible on my local server (i7 12xCores, 1xGTX1080Ti) so I switched to the single agent environment. The speed was faster with this environment and CPU utilization was around 10-15%, GPU around 20%. 
+
+
+
 
 ## Performance plot
 
