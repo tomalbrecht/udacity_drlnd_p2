@@ -66,7 +66,11 @@ source: https://de.wikipedia.org/wiki/Ornstein-Uhlenbeck-Prozess
 
 ### How I did it
 
-First I started with the same parameters like as the bipedal environment. After two episodes I had horrible results (around 0,5 points) so I changed the setup the following way. At first the learning rate seemed very slow and the scores where fluctuating, so I checked the NN model and extended a layer on the actor model. The improvment of score values seemed more stable after this, but still quite slow. Every update at episode end seems to reduce the score value. Increasing the timesteps reduced this problem.
+First I started with the same parameters like as the bipedal environment. After two episodes I had horrible results (around 0,5 points) so I changed the setup the following way. At first the learning rate seemed very slow and the scores where fluctuating, so I checked the NN model and extended a layer on the actor model. The improvment of score values seemed more stable after this, but still quite slow. Every update at episode end seems to reduce the score value. Increasing the timesteps reduced this problem, but did not stop it. 
+
+Then I raised the update rate, in hope that the learning will speed up. This was the case, but the updates for each episode threw the scores back again. So I disabled the TAU (setting TAU = 1) to see if this will stop the throwbacks.
+
+It partially stopped the throwbacks, but after a few steps the scores broke down again. So it seems, that a mixture of frequent updates to the target network could help. Thus I implemented this function.
 
 ## Performance plot
 

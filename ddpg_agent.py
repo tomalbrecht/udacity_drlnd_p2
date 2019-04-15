@@ -12,10 +12,18 @@ import torch.optim as optim
 BUFFER_SIZE = int(1e6)  # replay buffer size
 BATCH_SIZE = 128        # minibatch size
 GAMMA = 0.99            # discount factor
-TAU = 1e-3              # for soft update of target parameters
-LR_ACTOR = 1e-4         # learning rate of the actor 
-LR_CRITIC = 3e-4        # learning rate of the critic
+#TAU = 1e-3              # for soft update of target parameters
+TAU = 1              # for soft update of target parameters
+LR_ACTOR = 1e-2         # learning rate of the actor 
+#LR_ACTOR = 1e-4         # learning rate of the actor 
+#LR_CRITIC = 3e-4        # learning rate of the critic
+LR_CRITIC = 1e-2        # learning rate of the critic
 WEIGHT_DECAY = 0.0001   # L2 weight decay
+
+MU = 0.         # mean reversion level
+THETA = 0.15    # mean reversion speed oder mean reversion rate
+#SIGMA = 0.2     # random factor influence
+SIGMA = 0.4     # random factor influence
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
@@ -46,7 +54,7 @@ class Agent():
         self.critic_optimizer = optim.Adam(self.critic_local.parameters(), lr=LR_CRITIC, weight_decay=WEIGHT_DECAY)
 
         # Noise process
-        self.noise = OUNoise(action_size, random_seed)
+        self.noise = OUNoise(action_size, random_seed, mu=MU, theta=THETA, sigma=SIGMA)
 
         # Replay memory
         self.memory = ReplayBuffer(action_size, BUFFER_SIZE, BATCH_SIZE, random_seed)
