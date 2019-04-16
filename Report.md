@@ -75,7 +75,9 @@ It partially stopped the throwbacks, but after a few steps the scores broke down
 
 The performance with 20 agent was terrible on my local server (i7 12xCores, 1xGTX1080Ti) so I switched to the single agent environment. The speed was faster with this environment and CPU utilization was around 10-15%, GPU around 20%. 
 
+-- New beginning
 
+In the last trainings I could not get the agent to learn anything. For a few episodes the agent learned a few bits, after this it seemed to forget again. Thus I reseted every hyperparameter back to default set weight\_decay down to 0. The learning speed increased. I raised the batch size to speed up the training.
 
 
 ## Performance plot

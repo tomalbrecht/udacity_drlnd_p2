@@ -9,14 +9,25 @@ import torch
 import torch.nn.functional as F
 import torch.optim as optim
 
-MU = 0.         # mean reversion level
-THETA = 0.15    # mean reversion speed oder mean reversion rate
-SIGMA = 0.2     # random factor influence
+MU = 0.         # mean reversion level (default: 0.)
+THETA = 0.15    # mean reversion speed oder mean reversion rate (default: 0.15) --> TODO: 0.05
+SIGMA = 0.2     # random factor influence (sigma: 0.2) --> TODO: 0.02
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 class Agent():
     """Interacts with and learns from the environment."""
+    
+    # class variables, shared information for all agents
+    memory = None
+    
+    actor_local = None
+    actor_target = None
+    actor_optimizer = None
+
+    critic_local = None
+    critic_target = None
+    critic_optimizer = None
     
     def __init__(self, 
                  state_size=None, 
@@ -49,30 +60,48 @@ class Agent():
         self.lr_critic = lr_critic           # learning rate of the critic
         self.weight_decay = weight_decay     # L2 weight decay
 
+        # initialization for first class instance
+        if Agent.actor_local is None:
+            Agent.actor_local = Actor(state_size, action_size, random_seed).to(device)
+        if Agent.actor_target is None:
+            Agent.actor_target = Actor(state_size, action_size, random_seed).to(device)
+        if Agent.actor_optimizer is None:
+            Agent.actor_optimizer = optim.Adam(Agent.actor_local.parameters(), lr=lr_actor)
+        
         # Actor Network (w/ Target Network)
-        self.actor_local = Actor(state_size, action_size, random_seed).to(device)
-        self.actor_target = Actor(state_size, action_size, random_seed).to(device)
-        self.actor_optimizer = optim.Adam(self.actor_local.parameters(), lr=lr_actor)
+        self.actor_local = Agent.actor_local
+        self.actor_target = Agent.actor_target
+        self.actor_optimizer = Agent.actor_optimizer
 
+        # initialization for first class instance
+        if Agent.critic_local is None:
+            Agent.critic_local = Critic(state_size, action_size, random_seed).to(device)
+        if Agent.critic_target is None:
+            Agent.critic_target = Critic(state_size, action_size, random_seed).to(device)
+        if Agent.critic_optimizer is None:
+            Agent.critic_optimizer = optim.Adam(Agent.critic_local.parameters(), lr=lr_critic, weight_decay=weight_decay)
+        
         # Critic Network (w/ Target Network)
-        self.critic_local = Critic(state_size, action_size, random_seed).to(device)
-        self.critic_target = Critic(state_size, action_size, random_seed).to(device)
-        self.critic_optimizer = optim.Adam(self.critic_local.parameters(), lr=lr_critic, weight_decay=weight_decay)
+        self.critic_local = Agent.critic_local
+        self.critic_target = Agent.critic_target
+        self.critic_optimizer = Agent.critic_optimizer
 
         # Noise process
         self.noise = OUNoise(action_size, random_seed, mu=MU, theta=THETA, sigma=SIGMA)
+        #TODO: Maybe self.noise = OUNoise((20, action_size), random_seed)
 
         # Replay memory
-        self.memory = ReplayBuffer(action_size, buffer_size, batch_size, random_seed)
+        if Agent.memory is None:
+            Agent.memory = ReplayBuffer(action_size, buffer_size, batch_size, random_seed)
     
     def step(self, state, action, reward, next_state, done):
         """Save experience in replay memory, and use random sample from buffer to learn."""
         # Save experience / reward
-        self.memory.add(state, action, reward, next_state, done)
+        Agent.memory.add(state, action, reward, next_state, done)
 
         # Learn, if enough samples are available in memory
-        if len(self.memory) > self.batch_size:
-            experiences = self.memory.sample()
+        if len(Agent.memory) > self.batch_size:
+            experiences = Agent.memory.sample()
             self.learn(experiences, self.gamma)
 
     def act(self, state, add_noise=True):
