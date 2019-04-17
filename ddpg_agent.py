@@ -10,8 +10,8 @@ import torch.nn.functional as F
 import torch.optim as optim
 
 MU = 0.         # mean reversion level (default: 0.)
-THETA = 0.15    # mean reversion speed oder mean reversion rate (default: 0.15) --> TODO: 0.05
-SIGMA = 0.2     # random factor influence (sigma: 0.2) --> TODO: 0.02
+THETA = 0.05    # mean reversion speed oder mean reversion rate (default: 0.15) --> TODO: 0.05
+SIGMA = 0.02    # random factor influence (sigma: 0.2) --> TODO: 0.02
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
