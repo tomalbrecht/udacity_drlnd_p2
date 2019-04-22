@@ -102,7 +102,7 @@ Episode 100	    Average Score: 35.94	Score: 35.46
 Environment solved in 0 episodes!	Average Score: 35.94
 ```
 
-## Improvements
+## Ideas for Future Work
 * Discard this version of the code. I will use [`DeepRL/examples.py at master · ShangtongZhang/DeepRL`](https://github.com/ShangtongZhang/DeepRL/blob/master/examples.py) and change pytorch to tensorflow. This code's structure is fantastic and should be easy to extend with different environments.
 * Check parallelizing for the environment. The 20 agent version does not use all of the 12 CPUs. Only one CPU at 98% and GPU at 20%
 * Check Rainbow and PO algorithms [Rainbow: Combining Improvements in Deep Reinforcement Learning](https://arxiv.org/pdf/1710.02298.pdf)
