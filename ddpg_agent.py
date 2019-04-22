@@ -9,9 +9,11 @@ import torch
 import torch.nn.functional as F
 import torch.optim as optim
 
-MU = 0.         # mean reversion level (default: 0.)
-THETA = 0.05    # mean reversion speed oder mean reversion rate (default: 0.15) --> TODO: 0.05
-SIGMA = 0.02    # random factor influence (sigma: 0.2) --> TODO: 0.02
+MU = 0.           # mean reversion level (default: 0.)
+THETA = 0.05      # mean reversion speed oder mean reversion rate (default: 0.15) --> TODO: 0.05
+SIGMA = 0.02      # random factor influence (sigma: 0.2) --> TODO: 0.02
+
+N_TIME_STEPS = 2  # only learn every n time steps
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
@@ -94,15 +96,17 @@ class Agent():
         if Agent.memory is None:
             Agent.memory = ReplayBuffer(action_size, buffer_size, batch_size, random_seed)
     
-    def step(self, state, action, reward, next_state, done):
+    def step(self, time_step, state, action, reward, next_state, done):
         """Save experience in replay memory, and use random sample from buffer to learn."""
         # Save experience / reward
         Agent.memory.add(state, action, reward, next_state, done)
 
-        # Learn, if enough samples are available in memory
-        if len(Agent.memory) > self.batch_size:
-            experiences = Agent.memory.sample()
-            self.learn(experiences, self.gamma)
+        # only learn every n_time_steps
+        if time_step % N_TIME_STEPS == 0:
+            # Learn, if enough samples are available in memory
+            if len(Agent.memory) > self.batch_size:
+                experiences = Agent.memory.sample()
+                self.learn(experiences, self.gamma)
 
     def act(self, state, add_noise=True):
         """Returns actions for given state as per current policy."""

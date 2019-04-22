@@ -46,26 +46,28 @@ After a few trainings I decided to extend the initialization of the Agent, to pa
 ### Agent
 
 BUFFER_SIZE = int(1e6)  # replay buffer size
-BATCH_SIZE = 128        # minibatch size
-GAMMA = 0.99            # discount factor
+BATCH_SIZE = 1024       # minibatch size
+GAMMA = 0.98            # discount factor
 TAU = 1e-3              # for soft update of target parameters
-LR_ACTOR = 1e-4         # learning rate of the actor 
-LR_CRITIC = 3e-4        # learning rate of the critic
-WEIGHT_DECAY = 0.0001   # L2 weight decay
+LR_ACTOR = 1e-3         # learning rate of the actor 
+LR_CRITIC = 1e-4        # learning rate of the critic
+WEIGHT_DECAY = 1e-9       # L2 weight decay
 
 ### OU Noise
 
 MU = 0.         # mean reversion level
-THETA = 0.15    # mean reversion speed oder mean reversion rate
-SIGMA = 0.2     # random factor influence
+THETA = 0.05    # mean reversion speed oder mean reversion rate
+SIGMA = 0.02    # random factor influence
 source: https://de.wikipedia.org/wiki/Ornstein-Uhlenbeck-Prozess
+
+N_TIME_STEPS = 2  # only learn every n time steps
 
 ### Model
 
 * `Actor` contains 2 fully connected layers (256, 128) with leaky relu activations.
-* `Critic` contains 2 fully connected layers (256, 128) with leaky relu activations.
+* `Critic` contains 3 fully connected layers (256, 256, 128) with leaky relu activations. The network builds a critic (value) network that maps (state, action) pairs -> Q-values. See Code `ddpg_model.py --> class Critic(nn.Module)` for more details.
 
-### How I did it
+### Search method for Hyper Parameters
 
 First I started with the same parameters like as the bipedal environment. After two episodes I had horrible results (around 0,5 points) so I changed the setup the following way. At first the learning rate seemed very slow and the scores where fluctuating, so I checked the NN model and extended a layer on the actor model. The improvment of score values seemed more stable after this, but still quite slow. Every update at episode end seems to reduce the score value. Increasing the timesteps reduced this problem, but did not stop it. 
 
@@ -75,147 +77,34 @@ It partially stopped the throwbacks, but after a few steps the scores broke down
 
 The performance with 20 agent was terrible on my local server (i7 12xCores, 1xGTX1080Ti) so I switched to the single agent environment. The speed was faster with this environment and CPU utilization was around 10-15%, GPU around 20%. 
 
--- New beginning
+-- New beginning --
 
-In the last trainings I could not get the agent to learn anything. For a few episodes the agent learned a few bits, after this it seemed to forget again. Thus I reseted every hyperparameter back to default set weight\_decay down to 0. The learning speed increased. I raised the batch size to speed up the training.
+In the last trainings I could not get the agent to learn anything. For a few episodes the agent learned a few bits, after this it seemed to forget again. Thus I reseted every hyperparameter back to default set `weight_decay` down to 0. The learning speed increased. I raised the `batch_size` to speed up the training which had less effect. Then I lowered the noise (`theta` and `sigma`) which finally gave me a stable training. So it seems that reducing the weight decay (seems to be the l2 regularization in pytorch) and artificial noise did the job.
+
+After about 100 episodes the training seemed to overfit, so first I added a small `weight_decay` again (1e-9) and reduced `gamma` to 0.98. To test and play around with the stability of the network, I implemented `N_TIME_STEPS` and set it to 2. With these settings the algorithm got 31,76 after Episode 6 and stood stable untill 100. It seems, that still overfitting takes place and could be further tuned.
 
 
 ## Performance plot
 
-See: `rewards_plot.png` included in this repository.
+See: `results_plot.png` included in this repository.
 
 ```
-Episode 100	Average Score: 4.24
-Episode 200	Average Score: 10.37
-Episode 235	Average Score: 13.02
-Environment solved in 135 episodes!	Average Score: 13.02
+Episode 1	    Timestep 999	Score: 0.45	    min: 0.00	    max: 1.38
+Episode 2	    Timestep 999	Score: 1.61	    min: 0.83	    max: 3.08
+Episode 3       Timestep 999    Score: 4.88     min: 1.34       max: 9.10 
+Episode 4       Timestep 999    Score: 13.64    min: 4.85       max: 25.60
+Episode 5       Timestep 999    Score: 24.77    min: 16.52      max: 35.08
+Episode 6       Timestep 999    Score: 31.76    min: 23.56      max: 35.89
+...
+Episode 100	    Timestep 999	Score: 35.46	min: 26.03	max: 39.52
+Episode 100	    Average Score: 35.94	Score: 35.46
+
+Environment solved in 0 episodes!	Average Score: 35.94
 ```
 
 ## Improvements
 * Discard this version of the code. I will use [`DeepRL/examples.py at master · ShangtongZhang/DeepRL`](https://github.com/ShangtongZhang/DeepRL/blob/master/examples.py) and change pytorch to tensorflow. This code's structure is fantastic and should be easy to extend with different environments.
-
-
-
-
-
-
-
-
-
-
-
-## Learning algorithm
-
-The program is structured in the following way:
-
-- `Navigation.ipynb` - Notebook with additional information about the program structure
-- `agent_dqn.py` - There the DQN class is defined, which will be used in the notebook
-- `model_dqn.py` - Defines the DQN neural network for local and target network
-- `README.md` - Instructions how to setup this repository and start the agent
-- `Report.md` - This file
-- `rewards_plot.png` - Plot of the rewards per episode for the best training
-- `solved_model_weights.pth` - Saved model weights (pytorch)
-- `unity-environment.log` - wasn't me. autogenerated file from unity environment
-
-The modules are structured like this, because I am going to extend the code with the rainbow algorithm. This way I can plug the needed modules in and out as I need them.
-
-The control structure is defined within the `dqn` function in the navigation notebook and will use functions from the agent instance from the agent class defined in `agent_dqn.py`. The agent class will use the neural network architecture defined in `model_dqn.py`. The `agent_dqn.py` contains two neural networks (local/target) to learn the action values. The target network will be updated every `UPDATE_EVERY` steps.
-
-The training will end under the following circumstances:
-- the environment is solved
-- until `n_episodes` are reached
-- `max_t` time steps are reached.
-The environment is considered solved when the average reward (over the last 100 episodes) is at least +13.
-
-I built in a trendline function for further tests to see what maximum score I get. The trendline will check the last 100 episodes for the trend (increasing or decreasing scores). In case of a decreasing or stable trend, the training will end. For submission I disabled/commented this function - I want to do further tests after submission.
-
-A reward of `+1` is provided for collecting a yellow banana, and a reward of `-1` is provided for collecting a blue banana. It seems, that the environment won't spawn new bananas, because raising `max_t` more than special amount, won't lower the episodes for solving the environment.
-
-After a successful training, the weight parameters of the network are saved for later reuse (chapter 4 of the jupyter notebook).
-
-
-## Hyper Parameters  
-
-### RL Parameters
-
-- `n_episodes (int)`: maximum number of training episodes
-- `max_t (int)`: maximum number of timesteps per episode
-- `eps_start (float)`: starting value of epsilon, for epsilon-greedy action selection
-- `eps_end (float)`: minimum value of epsilon
-- `eps_decay (float)`: multiplicative factor (per episode) for decreasing epsilon
-
-Just to remember:
-- `epsilon` = greedy factor for exploration vs. exploitation
-- `alpha` = something like learnrate. defines the step size when an update occurs
-- `gamma` = discount factor for rewards
-
-Setup:
-`n_episodes=2000`, `max_t=50000`, `eps_start=0.5`, `eps_end=0.01` and`eps_decay=0.97`
-
-Search method for Hyper Parameters:
-
-First I started almost with the same parameters as lunar lander. Except for `eps_start`. I lowered `eps_start` to 0.5 to get a balance between exploration vs. exploitation, like suggested in a former video. In the beginning I expected the agent to act more randomly (due additional random initialization of the neural network).
-
-In the beginning I used the `eps_decay` from Lunar Lander, but lowered the decay to get a faster converge of the algorithm. I lowered the epsilon decay faster with an higher epsilon greedy decay so the greedy factor will come in sooner. I decreased the values slowly (by 0.1), so on lower episodes the score increased faster. At higher decay rate (lower than 0.97) the training got unstable going lower as 0.96, so I stopped.
-
-I set an higher number of timesteps `max_t`, because the performance is measured against the episodes only. It seems it makes no difference if the timesteps are higher than 50000 (maybe the environment has no bananas left then). Raising `max_t` does not seem to reduce the performance (speed) but increasing the gains per episode.
-
-`n_episode` doesn't make a difference, because I won't reach the limit with my training.
-
-All other parameters kept untouched, because there seemed to be no need. Maybe in a later training I will experiment with these parameters to see if they have an relevant impact for this environment.
-
-### DQN Hyper Parameters
-
-- `BUFFER_SIZE (int)`: replay buffer size
-- `BATCH_SIZE (int)`: mini batch size
-- `GAMMA (float)`: discount factor
-- `TAU (float)`: soft update of target parameters
-- `LR (float)`: learning rate for optimizer
-- `UPDATE_EVERY (int)`: how often to update the network in steps
-
-Setup:
-- `BUFFER_SIZE = int(1e5)`, 
-- `BATCH_SIZE = 64`, 
-- `GAMMA = 0.99`, 
-- `TAU = 1e-3`, 
-- `LR = 0.0001`
-- `UPDATE_EVERY = 2`
-
-Neural Network Setup:
-- 2 Hidden Layer Dense Network Layers, each with RELU activation
-- Adam Optimizer
-
-
-Most of the parameters I left untouched from Lunar Lander, including the NN architecture. The architecture seemed fine for this simple problem (only 37 features, with not such complicated dependencies). Maybe it would be enough to use only a single hidden layer.
-
-`BATCH_SIZE` influences the update rate of the neural network. At higher values the network will train faster but lose some accuracy because the network won't be able to update to outliers (if there are any).
-`LR` defines the learning rate for the backpropagation in the neural network training. I started at 0.0005 and reduced it (by 0.0001 per step) down to 0.0001 because the training was oscillating (thus I expected the gradient descent to overshoot the optimal minimum). The training still seems too noisy (DRLN plot) - in a later test I want to check the DL part (loss) to see if L2 regularization will help to get better results. Xavier initialization could help as well because the DL could converge faster.
-The network itself was trained without a final activation because the action values should be evaluated.
-
-The network has an initial dimension the same as the state size. For now I did not tune the network, because pytorch seems to lack something similar as tensorboard. The performence values of the network would be interessting, so I could see in case of an unstable training if the problem lies in the RL or the DL part.
-
-I reduced the `UPDATE_EVERY` to 2 because the network will then faster learn due more updates. Update every 3 will increase the needed episodes by 100.
-
-
-## Performance plot
-
-See: `rewards_plot.png` included in this repository.
-
-```
-Episode 100	Average Score: 4.24
-Episode 200	Average Score: 10.37
-Episode 235	Average Score: 13.02
-Environment solved in 135 episodes!	Average Score: 13.02
-```
-
-
-## Improvements
-
-* Set update Steps = 2 for maybe faster converge?  --> done, works better by 100 episodes
-* At higher episodes the training seemed unstable. Check if it was a NN or RL problem
-* Install on my server when I have the time
-* Replace pytorch and plugin in tensorflow to use tensorboard to get some idea about the NN training
-* Try Xavier initialization and AdaGrad for NN --> (Adam done, working)
-* More tests with enabled trendline I see what the maximum score will be
-* Is there a way to separate DQN hyper parameter search from DL hyper parameter search to simplify the search?
-* Train and compare to Rainbow agent [Rainbow: Combining Improvements in Deep Reinforcement Learning](https://arxiv.org/pdf/1710.02298.pdf).
+* Check parallelizing for the environment. The 20 agent version does not use all of the 12 CPUs. Only one CPU at 98% and GPU at 20%
+* Check Rainbow and PO algorithms [Rainbow: Combining Improvements in Deep Reinforcement Learning](https://arxiv.org/pdf/1710.02298.pdf)
+* Only Update target network if the current episode score is at least as good as the former episode
+* Tune overfitting a little bit better, so the score won't decrease over time
