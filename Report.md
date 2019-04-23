@@ -2,6 +2,11 @@
 
 This project is based on source code offered by the course:[`deep-reinforcement-learning/ddpg-bipedal`](https://github.com/udacity/deep-reinforcement-learning/tree/master/ddpg-bipedal). I've extended the code to run with multiple Agents, so I can use the 2nd Version of the environment with 20 Agents.
 
+I chose the DDPG (Deep Deterministic Policy Gradients) algorithm because it is able to handle continuous spaces, which is needed for this environment and seemed easier as discretization (see Chapter 1 of the course). Continuous spaces make it more difficult to train an agent, because the action space gets highly dimensional. In contrast DQN (with Q-tables)solves problems with high-dimensional observation spaces, but it can only handle discrete and low-dimensional action spaces. Using a neural network to approximate these values in a convinient way.
+The algorithm also benefits from two separate neural network (actor and critic) - so the target network will only be updated with every second training step (see hyperparameters for details) and a TAU of 1e-3.
+
+For more details see [`Continuous Control with Deep Reinforcement Learning`](https://arxiv.org/pdf/1509.02971.pdf)
+
 ## State and Action Space
 
 Source: [`Unity-Technologies/ml-agents`](https://github.com/Unity-Technologies/ml-agents/blob/master/docs/Learning-Environment-Examples.md#reacher)
@@ -38,9 +43,6 @@ The program is structured in the following way:
 The base function for `ddpg` was copied from `ddpg-bipedal` to get the main loops running. I changed the environment setup according to my first project. Then I extended the code to work with more than one Agent - depending on the number of agents the environment provides. When I ran the code, too less information about the training was provided, so I extended the code to print some information about scores per timestep.
 After a few trainings I decided to extend the initialization of the Agent, to parametrize the needed hyperparameters.
 
-### Enhancements to the code
-
-
 ## Hyper Parameters  
 
 ### Agent
@@ -62,7 +64,7 @@ source: https://de.wikipedia.org/wiki/Ornstein-Uhlenbeck-Prozess
 
 N_TIME_STEPS = 2  # only learn every n time steps
 
-### Model
+### NN Model
 
 * `Actor` contains 2 fully connected layers (256, 128) with leaky relu activations.
 * `Critic` contains 3 fully connected layers (256, 256, 128) with leaky relu activations. The network builds a critic (value) network that maps (state, action) pairs -> Q-values. See Code `ddpg_model.py --> class Critic(nn.Module)` for more details.
